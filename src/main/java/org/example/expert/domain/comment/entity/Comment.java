@@ -31,7 +31,7 @@ public class Comment extends Timestamped {
         this.todo = todo;
     }
 
-    public void update(String contents) {
-        this.contents = contents;
-    }
+//    public void update(String contents) {
+//        this.contents = contents;
+//    }
 }

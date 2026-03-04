@@ -12,6 +12,7 @@ import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.user.entity.User;
 import org.example.expert.domain.user.enums.UserRole;
 import org.example.expert.domain.user.repository.UserRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,6 +26,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ManagerServiceTest {
@@ -120,5 +122,154 @@ class ManagerServiceTest {
         assertNotNull(response);
         assertEquals(managerUser.getId(), response.getUser().getId());
         assertEquals(managerUser.getEmail(), response.getUser().getEmail());
+    }
+
+
+    @Test
+    @DisplayName("등록하려는 관리자가 존재하지 않으면 예외 발생")
+    void manager가_존재하지_않으면_예외_발생() {
+
+        AuthUser authUser = new AuthUser(1L, "a@test.com", UserRole.USER);
+        ManagerSaveRequest request = new ManagerSaveRequest(99L);
+
+        User creator = new User("a@test.com", "pw", UserRole.USER);
+        ReflectionTestUtils.setField(creator, "id", 1L);
+
+        Todo todo = mock(Todo.class);
+        when(todo.getUser()).thenReturn(creator);
+
+        when(todoRepository.findById(1L)).thenReturn(Optional.of(todo));
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(InvalidRequestException.class,
+                () -> managerService.saveManager(authUser, 1L, request));
+    }
+
+    @Test
+    @DisplayName("작성자는 본인을 담당자로 등록할수없다.")
+    void manager로_자신을_등록할_수_없다() {
+
+        AuthUser authUser = new AuthUser(1L, "a@test.com", UserRole.USER);
+        ManagerSaveRequest request = new ManagerSaveRequest(1L);
+
+        User creator = new User("a@test.com", "pw", UserRole.USER);
+        ReflectionTestUtils.setField(creator, "id", 1L);
+
+        Todo todo = mock(Todo.class);
+        when(todo.getUser()).thenReturn(creator);
+
+        when(todoRepository.findById(1L)).thenReturn(Optional.of(todo));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(creator));
+
+        assertThrows(InvalidRequestException.class,
+                () -> managerService.saveManager(authUser, 1L, request));
+    }
+
+    @Test
+    @DisplayName("삭제시 유저가 없으면 예외 발생")
+    void delete시_유저가_없으면_예외() {
+
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(InvalidRequestException.class,
+                () -> managerService.deleteManager(1L, 1L, 1L));
+    }
+
+    @Test
+    @DisplayName("삭제시 todo가 없으면 예외 발생")
+    void delete시_todo가_없으면_예외() {
+
+        User user = mock(User.class);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(todoRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(InvalidRequestException.class,
+                () -> managerService.deleteManager(1L, 1L, 1L));
+    }
+
+    @Test
+    @DisplayName("삭제시 일정 작성자가 아니면 예외 발생")
+    void delete시_일정작성자가_아니면_예외() {
+
+        User loginUser = mock(User.class);
+        when(loginUser.getId()).thenReturn(1L);
+
+        User todoUser = mock(User.class);
+        when(todoUser.getId()).thenReturn(2L);
+
+        Todo todo = mock(Todo.class);
+        when(todo.getUser()).thenReturn(todoUser);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(loginUser));
+        when(todoRepository.findById(1L)).thenReturn(Optional.of(todo));
+
+        assertThrows(InvalidRequestException.class,
+                () -> managerService.deleteManager(1L, 1L, 1L));
+    }
+
+    @Test
+    @DisplayName("삭제시 manager가 없으면 예외 발생")
+    void delete시_manager가_없으면_예외() {
+
+        User loginUser = mock(User.class);
+        when(loginUser.getId()).thenReturn(1L);
+
+        Todo todo = mock(Todo.class);
+        when(todo.getUser()).thenReturn(loginUser);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(loginUser));
+        when(todoRepository.findById(1L)).thenReturn(Optional.of(todo));
+        when(managerRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(InvalidRequestException.class,
+                () -> managerService.deleteManager(1L, 1L, 1L));
+    }
+
+    @Test
+    @DisplayName("삭제시 다른 todo의 manager면 예외 발생")
+    void delete시_다른_todo의_manager면_예외() {
+
+        User loginUser = mock(User.class);
+        when(loginUser.getId()).thenReturn(1L);
+
+        Todo todo = mock(Todo.class);
+        when(todo.getId()).thenReturn(1L);
+        when(todo.getUser()).thenReturn(loginUser);
+
+        Todo otherTodo = mock(Todo.class);
+        when(otherTodo.getId()).thenReturn(2L);
+
+        Manager manager = mock(Manager.class);
+        when(manager.getTodo()).thenReturn(otherTodo);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(loginUser));
+        when(todoRepository.findById(1L)).thenReturn(Optional.of(todo));
+        when(managerRepository.findById(1L)).thenReturn(Optional.of(manager));
+
+        assertThrows(InvalidRequestException.class,
+                () -> managerService.deleteManager(1L, 1L, 1L));
+    }
+
+    @Test
+    @DisplayName("매니저를 정상적으로 삭제")
+    void manager를_정상적으로_삭제() {
+
+        User loginUser = mock(User.class);
+        when(loginUser.getId()).thenReturn(1L);
+
+        Todo todo = mock(Todo.class);
+        when(todo.getId()).thenReturn(1L);
+        when(todo.getUser()).thenReturn(loginUser);
+
+        Manager manager = mock(Manager.class);
+        when(manager.getTodo()).thenReturn(todo);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(loginUser));
+        when(todoRepository.findById(1L)).thenReturn(Optional.of(todo));
+        when(managerRepository.findById(1L)).thenReturn(Optional.of(manager));
+
+        managerService.deleteManager(1L, 1L, 1L);
+
+        verify(managerRepository).delete(manager);
     }
 }
