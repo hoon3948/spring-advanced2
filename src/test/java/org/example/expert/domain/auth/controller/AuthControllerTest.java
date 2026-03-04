@@ -5,6 +5,7 @@ import org.example.expert.domain.auth.dto.request.SignupRequest;
 import org.example.expert.domain.auth.dto.response.SigninResponse;
 import org.example.expert.domain.auth.dto.response.SignupResponse;
 import org.example.expert.domain.auth.service.AuthService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,6 +25,7 @@ class AuthControllerTest {
     private AuthController authController;
 
     @Test
+    @DisplayName("회원가입 성공")
     void signup() {
         SignupRequest request =
                 new SignupRequest("test@test.com", "pw", "USER");
@@ -39,6 +41,7 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("로그인 성공")
     void signin() {
         SigninRequest request =
                 new SigninRequest("test@test.com", "pw");

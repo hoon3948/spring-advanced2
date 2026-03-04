@@ -3,6 +3,7 @@ package org.example.expert.client;
 import org.example.expert.client.dto.WeatherDto;
 import org.example.expert.domain.common.exception.ServerException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -40,9 +41,9 @@ class WeatherClientTest {
         return LocalDate.now().format(DateTimeFormatter.ofPattern("MM-dd"));
     }
 
-    // 1️⃣ 상태코드 실패
     @Test
-    void 상태코드가_OK가_아니면_예외() {
+    @DisplayName("상태코드가 OK가 아니면 예외")
+    void statusCode가_OK가_아니면_예외() {
 
         when(restTemplate.getForEntity(any(), any()))
                 .thenReturn(new ResponseEntity<>(null, HttpStatus.BAD_REQUEST));
@@ -51,9 +52,9 @@ class WeatherClientTest {
                 () -> weatherClient.getTodayWeather());
     }
 
-    // 2️⃣ body null
     @Test
-    void 바디가_null이면_예외() {
+    @DisplayName("바디가 null이면 예외")
+    void body가_null이면_예외() {
 
         when(restTemplate.getForEntity(any(), any()))
                 .thenReturn(new ResponseEntity<>(null, HttpStatus.OK));
@@ -62,9 +63,9 @@ class WeatherClientTest {
                 () -> weatherClient.getTodayWeather());
     }
 
-    // 3️⃣ body empty
     @Test
-    void 바디가_비어있으면_예외() {
+    @DisplayName("바디가 비어있으면 예외")
+    void body가_비어있으면_예외() {
 
         when(restTemplate.getForEntity(any(), any()))
                 .thenReturn(new ResponseEntity<>(new WeatherDto[]{}, HttpStatus.OK));
@@ -73,9 +74,9 @@ class WeatherClientTest {
                 () -> weatherClient.getTodayWeather());
     }
 
-    // 4️⃣ 오늘 날짜 일치 → 성공
     @Test
-    void 오늘날짜가_있으면_정상반환() {
+    @DisplayName("오늘 날짜가 일치하면 성공")
+    void 오늘_날짜가_있으면_정상반환() {
 
         WeatherDto dto = new WeatherDto(today(), "맑음");
 
@@ -87,9 +88,9 @@ class WeatherClientTest {
         assertEquals("맑음", result);
     }
 
-    // 5️⃣ 오늘 날짜 없음 → 예외
     @Test
-    void 오늘날짜가_없으면_예외() {
+    @DisplayName("오늘 날짜가 없으면 예외 발생")
+    void 오늘_날짜가_없으면_예외() {
 
         WeatherDto dto = new WeatherDto("01-01", "눈");
 
