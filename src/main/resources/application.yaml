@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: expert
+  datasource:
+    url: jdbc:mysql://localhost:3306/expert
+    username: root
+    password: 12345678
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+    defer-datasource-initialization: true
+
+## 암호화에 사용할 비밀키
+jwt:
+  secret:
+    key: c3BhcnRhLXNwcmluZy1hZHZhbmNlZC1qd3Qtc2VjcmV0LWtleS0yMDI2
+
+logging:
+  level:
+    org.hibernate.type: trace
+
+## 환경변수:
+  ## DB_HOST=localhost;DB_NAME=expert;DB_PASSWORD=12345678;DB_PORT=3306;DB_USER=root;JWT_KEY="nG9QhQWm4f8+YkqC2k0R2g6v7JpH9XlV3Wb1TzQ8sYc="
