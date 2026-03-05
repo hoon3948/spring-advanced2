@@ -4,9 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.example.expert.client.WeatherClient;
 import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.common.exception.InvalidRequestException;
+import org.example.expert.domain.manager.entity.Manager;
+import org.example.expert.domain.manager.repository.ManagerRepository;
 import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
+import org.example.expert.domain.todo.dto.response.TodoUpdateResponse;
 import org.example.expert.domain.todo.entity.Todo;
 import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.user.dto.response.UserResponse;
@@ -17,12 +20,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class TodoService {
 
     private final TodoRepository todoRepository;
     private final WeatherClient weatherClient;
+    private final ManagerRepository managerRepository;
 
     @Transactional
     public TodoSaveResponse saveTodo(AuthUser authUser, TodoSaveRequest todoSaveRequest) {
@@ -80,5 +86,26 @@ public class TodoService {
                 todo.getCreatedAt(),
                 todo.getModifiedAt()
         );
+    }
+
+    @Transactional
+    public TodoUpdateResponse updateTodo(long userId, long todoId, TodoSaveRequest request) {
+        Todo todo = todoRepository.findByIdWithUser(todoId)
+                .orElseThrow(() -> new InvalidRequestException("Todo not found"));
+
+        if (userId == todo.getUser().getId()){
+            todo.update(request.getTitle(), request.getContents());
+            return new TodoUpdateResponse(todo.getId(), todo.getTitle(), todo.getContents());
+        } // 내 t0d0가 맞으면 수정
+
+        List<Manager> managerList = managerRepository.findByTodoIdWithUser(todoId);
+        for (Manager manager : managerList){
+            if(userId == manager.getUser().getId()){
+                todo.update(request.getTitle(), request.getContents());
+                return new TodoUpdateResponse(todo.getId(), todo.getTitle(), request.getContents());
+            }
+        } // 내가 매니저로 등록된 t0d0가 맞으면 수정
+
+        throw new InvalidRequestException("자신의 todo 혹은 매니저로 등록된 todo만 수정할 수 있습니다.");
     }
 }

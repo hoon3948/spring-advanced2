@@ -7,6 +7,7 @@ import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
+import org.example.expert.domain.todo.dto.response.TodoUpdateResponse;
 import org.example.expert.domain.todo.service.TodoService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -37,5 +38,14 @@ public class TodoController {
     @GetMapping("/todos/{todoId}")
     public ResponseEntity<TodoResponse> getTodo(@PathVariable long todoId) {
         return ResponseEntity.ok(todoService.getTodo(todoId));
+    }
+
+    @PutMapping("/todos/{todoId}")
+    public ResponseEntity<TodoUpdateResponse> updateTodo(
+            @Auth AuthUser authUser,
+            @PathVariable long todoId,
+            @Valid @RequestBody TodoSaveRequest request
+    ) {
+        return ResponseEntity.ok(todoService.updateTodo(authUser.getId(), todoId, request));
     }
 }

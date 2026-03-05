@@ -32,4 +32,13 @@ public class CommentController {
     public ResponseEntity<List<CommentResponse>> getComments(@PathVariable long todoId) {
         return ResponseEntity.ok(commentService.getComments(todoId));
     }
+
+    @PutMapping("/comments/{commentId}")
+    public void updateComment(
+            @Auth AuthUser authUser,
+            @PathVariable long commentId,
+            @Valid @RequestBody CommentSaveRequest request
+    ){
+        commentService.updateComment(authUser, commentId, request);
+    }
 }

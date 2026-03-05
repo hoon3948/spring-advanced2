@@ -62,4 +62,17 @@ public class CommentService {
         }
         return dtoList;
     }
+
+    @Transactional
+    public void updateComment(AuthUser authUser, long commentId, CommentSaveRequest request) {
+        User user = User.fromAuthUser(authUser);
+        Comment comment = commentRepository.findById(commentId).orElseThrow(() ->
+                new InvalidRequestException("Comment not found"));
+
+        if(!authUser.getId().equals(comment.getUser().getId())) {
+            throw new InvalidRequestException("본인의 댓글만 수정할 수 있습니다");
+        }
+
+        comment.update(request.getContents());
+    }
 }

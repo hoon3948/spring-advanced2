@@ -21,9 +21,10 @@ public class AdminInterceptor implements HandlerInterceptor {
             HttpServletResponse response,
             Object handler
     )throws Exception {
-        UserRole userRole = (UserRole) request.getSession().getAttribute("role");
+        String roleValue = (String) request.getAttribute("userRole");
+        UserRole userRole = roleValue == null ? null : UserRole.of(roleValue);
 
-        if(userRole != UserRole.ADMIN){
+        if(!UserRole.ADMIN.equals(userRole)){
             log.warn("관리자 아님. 접근 거부");
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "접근권한이 없습니다.");
             return false;
