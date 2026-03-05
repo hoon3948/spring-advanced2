@@ -33,5 +33,5 @@ public class Comment extends Timestamped {
 
 //    public void update(String contents) {
 //        this.contents = contents;
-//    }
+//    } // 미사용 메서드
 }
