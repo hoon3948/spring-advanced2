@@ -4,6 +4,7 @@ import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
+import org.example.expert.domain.todo.dto.response.TodoUpdateResponse;
 import org.example.expert.domain.todo.service.TodoService;
 import org.example.expert.domain.user.dto.response.UserResponse;
 import org.example.expert.domain.user.enums.UserRole;
@@ -15,11 +16,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.example.expert.domain.user.enums.UserRole.USER;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,7 +42,7 @@ class TodoControllerTest {
     void todo를_정상적으로_등록한다() {
 
         AuthUser authUser =
-                new AuthUser(1L, "test@test.com", UserRole.USER);
+                new AuthUser(1L, "test@test.com", USER);
 
         TodoSaveRequest request =
                 new TodoSaveRequest("제목", "내용");
@@ -111,5 +117,33 @@ class TodoControllerTest {
 
         assertEquals(200, result.getStatusCodeValue());
         assertEquals("제목", result.getBody().getTitle());
+    }
+
+    @Test
+    @DisplayName("updateTodo 요청에 성공한다")
+    void updateTodo에_성공한다() {
+
+        // given
+        long userId = 1L;
+        long todoId = 10L;
+
+        AuthUser authUser = new AuthUser(userId, "email@test.com", USER);
+
+        TodoSaveRequest request = new TodoSaveRequest("title", "contents");
+
+        TodoUpdateResponse response = new TodoUpdateResponse(todoId, "title", "contents");
+
+        given(todoService.updateTodo(userId, todoId, request))
+                .willReturn(response);
+
+        // when
+        ResponseEntity<TodoUpdateResponse> result =
+                todoController.updateTodo(authUser, todoId, request);
+
+        // then
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isEqualTo(response);
+
+        verify(todoService).updateTodo(userId, todoId, request);
     }
 }

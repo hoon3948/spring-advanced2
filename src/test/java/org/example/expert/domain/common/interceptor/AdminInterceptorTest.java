@@ -26,9 +26,6 @@ class AdminInterceptorTest {
     @Mock
     private HttpServletResponse response;
 
-    @Mock
-    private HttpSession session;
-
     @BeforeEach
     void setUp() {
         adminInterceptor = new AdminInterceptor();
@@ -38,8 +35,7 @@ class AdminInterceptorTest {
     @DisplayName("관리자 접근에 성공한다")
     void preHandle에_성공한다() throws Exception {
         // given
-        Mockito.when(request.getSession()).thenReturn(session);
-        Mockito.when(session.getAttribute("role")).thenReturn(UserRole.ADMIN);
+        Mockito.when(request.getAttribute("userRole")).thenReturn("ADMIN");
         Mockito.when(request.getRequestURI()).thenReturn("/admin/users");
 
         // when
@@ -53,8 +49,7 @@ class AdminInterceptorTest {
     @DisplayName("관리자가 아니면 접근에 실패한다")
     void preHandle에_실패한다() throws Exception {
         // given
-        Mockito.when(request.getSession()).thenReturn(session);
-        Mockito.when(session.getAttribute("role")).thenReturn(UserRole.USER);
+        Mockito.when(request.getAttribute("userRole")).thenReturn("USER");
 
         // when
         boolean result = adminInterceptor.preHandle(request, response, new Object());

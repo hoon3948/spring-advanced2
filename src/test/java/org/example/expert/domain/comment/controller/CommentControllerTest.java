@@ -17,7 +17,9 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
+import static org.example.expert.domain.user.enums.UserRole.USER;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,7 +35,7 @@ class CommentControllerTest {
     @DisplayName("댓글 저장")
     void comment를_정상적으로_저장한다() {
 
-        AuthUser authUser = new AuthUser(1L, "test@test.com", UserRole.USER);
+        AuthUser authUser = new AuthUser(1L, "test@test.com", USER);
         long todoId = 10L;
         CommentSaveRequest request = new CommentSaveRequest("댓글 내용");
 
@@ -89,5 +91,21 @@ class CommentControllerTest {
 
         assertEquals("댓글1", result.getBody().get(0).getContents());
         assertEquals("user2@test.com", result.getBody().get(1).getUser().getEmail());
+    }
+
+    @Test
+    @DisplayName("댓글 수정에 성공한다")
+    void updateComment에_성공한다() {
+
+        // given
+        AuthUser authUser = new AuthUser(1L, "test@test.com", USER);
+        long commentId = 10L;
+        CommentSaveRequest request = new CommentSaveRequest("수정된 댓글");
+
+        // when
+        commentController.updateComment(authUser, commentId, request);
+
+        // then
+        verify(commentService).updateComment(authUser, commentId, request);
     }
 }

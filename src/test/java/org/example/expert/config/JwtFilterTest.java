@@ -83,7 +83,6 @@ class JwtFilterTest {
         when(claims.getSubject()).thenReturn("1");
         when(claims.get("email")).thenReturn("test@test.com");
         when(claims.get("userRole", String.class)).thenReturn("USER");
-        when(claims.get("userRole")).thenReturn("USER");
 
         jwtFilter.doFilter(request, response, filterChain);
 
@@ -107,13 +106,13 @@ class JwtFilterTest {
         when(claims.getSubject()).thenReturn("1");
         when(claims.get("email")).thenReturn("test@test.com");
         when(claims.get("userRole", String.class)).thenReturn("USER");
-        when(claims.get("userRole")).thenReturn("USER");
 
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
 
         jwtFilter.doFilter(request, response, filterChain);
 
         assertEquals(403, response.getStatus());
+        verify(filterChain, never()).doFilter(any(), any());
     }
 
     @Test

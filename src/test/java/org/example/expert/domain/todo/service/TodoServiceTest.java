@@ -3,9 +3,12 @@ package org.example.expert.domain.todo.service;
 import org.example.expert.client.WeatherClient;
 import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.common.exception.InvalidRequestException;
+import org.example.expert.domain.manager.entity.Manager;
+import org.example.expert.domain.manager.repository.ManagerRepository;
 import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
+import org.example.expert.domain.todo.dto.response.TodoUpdateResponse;
 import org.example.expert.domain.todo.entity.Todo;
 import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.user.entity.User;
@@ -24,8 +27,11 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,6 +42,9 @@ class TodoServiceTest {
 
     @Mock
     private WeatherClient weatherClient;
+
+    @Mock
+    private ManagerRepository managerRepository;
 
     @InjectMocks
     private TodoService todoService;
@@ -116,5 +125,114 @@ class TodoServiceTest {
 
         assertThrows(InvalidRequestException.class,
                 () -> todoService.getTodo(1L));
+    }
+
+    @Test
+    @DisplayName("todo 작성자가 수정에 성공한다")
+    void updateTodo에_작성자가_수정에_성공한다() {
+
+        // given
+        long userId = 1L;
+        long todoId = 10L;
+
+        User user = new User();
+        ReflectionTestUtils.setField(user, "id", userId);
+
+        Todo todo = new Todo();
+        ReflectionTestUtils.setField(todo, "id", todoId);
+        ReflectionTestUtils.setField(todo, "user", user);
+        ReflectionTestUtils.setField(todo, "title", "old title");
+        ReflectionTestUtils.setField(todo, "contents", "old contents");
+
+        TodoSaveRequest request = new TodoSaveRequest("new title", "new contents");
+
+        given(todoRepository.findByIdWithUser(todoId)).willReturn(Optional.of(todo));
+
+        // when
+        TodoUpdateResponse response = todoService.updateTodo(userId, todoId, request);
+
+        // then
+        assertThat(response.getId()).isEqualTo(todoId);
+        assertThat(response.getTitle()).isEqualTo("new title");
+        assertThat(response.getContents()).isEqualTo("new contents");
+    }
+
+    @Test
+    @DisplayName("매니저가 수정에 성공한다")
+    void updateTodo에_매니저가_수정에_성공한다() {
+
+        // given
+        long userId = 2L;
+        long todoId = 10L;
+
+        User owner = new User();
+        ReflectionTestUtils.setField(owner, "id", 1L);
+
+        Todo todo = new Todo();
+        ReflectionTestUtils.setField(todo, "id", todoId);
+        ReflectionTestUtils.setField(todo, "user", owner);
+
+        User managerUser = new User();
+        ReflectionTestUtils.setField(managerUser, "id", userId);
+
+        Manager manager = new Manager();
+        ReflectionTestUtils.setField(manager, "user", managerUser);
+
+        TodoSaveRequest request = new TodoSaveRequest("new title", "new contents");
+
+        given(todoRepository.findByIdWithUser(todoId)).willReturn(Optional.of(todo));
+        given(managerRepository.findByTodoIdWithUser(todoId)).willReturn(List.of(manager));
+
+        // when
+        TodoUpdateResponse response = todoService.updateTodo(userId, todoId, request);
+
+        // then
+        assertThat(response.getId()).isEqualTo(todoId);
+        assertThat(response.getTitle()).isEqualTo("new title");
+        assertThat(response.getContents()).isEqualTo("new contents");
+    }
+
+    @Test
+    @DisplayName("todo가 존재하지 않으면 예외가 발생한다")
+    void updateTodo에_todo가_없으면_예외가_발생한다() {
+
+        // given
+        long userId = 1L;
+        long todoId = 10L;
+
+        TodoSaveRequest request = new TodoSaveRequest("title", "contents");
+
+        given(todoRepository.findByIdWithUser(todoId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> todoService.updateTodo(userId, todoId, request))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessage("Todo not found");
+    }
+
+    @Test
+    @DisplayName("작성자도 매니저도 아니면 예외가 발생한다")
+    void updateTodo에_권한이_없으면_예외가_발생한다() {
+
+        // given
+        long userId = 3L;
+        long todoId = 10L;
+
+        User owner = new User();
+        ReflectionTestUtils.setField(owner, "id", 1L);
+
+        Todo todo = new Todo();
+        ReflectionTestUtils.setField(todo, "id", todoId);
+        ReflectionTestUtils.setField(todo, "user", owner);
+
+        TodoSaveRequest request = new TodoSaveRequest("title", "contents");
+
+        given(todoRepository.findByIdWithUser(todoId)).willReturn(Optional.of(todo));
+        given(managerRepository.findByTodoIdWithUser(todoId)).willReturn(List.of());
+
+        // when & then
+        assertThatThrownBy(() -> todoService.updateTodo(userId, todoId, request))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessage("자신의 todo 혹은 매니저로 등록된 todo만 수정할 수 있습니다.");
     }
 }
